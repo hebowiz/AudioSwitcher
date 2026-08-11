@@ -1,0 +1,9 @@
+# Desktop UI and system tray
+PySide6>=6.7,<7
+
+# Windows COM / Win32 API bindings
+comtypes>=1.4,<2
+pywin32>=306
+
+# Process-to-executable resolution
+psutil>=5.9,<8
