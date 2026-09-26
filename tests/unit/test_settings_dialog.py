@@ -78,6 +78,16 @@ def test_device_picker_displays_names_without_ids(qtbot) -> None:
     assert displayed == ["A", "B"]
 
 
+def test_stale_device_id_is_shown_connected_and_migrated_by_name(qtbot) -> None:
+    dialog = TargetDialog(TargetKind.SYSTEM_DEFAULT, DEVICES, list)
+    qtbot.addWidget(dialog)
+
+    dialog._append_device(AudioDevice("old-a", "A"))
+
+    assert dialog._devices.item(0).text() == "A"
+    assert dialog._configured_devices()[0] == DEVICES[0]
+
+
 def test_startup_checkbox_applies_immediately(qtbot) -> None:
     changes: list[bool] = []
     window = SettingsWindow(

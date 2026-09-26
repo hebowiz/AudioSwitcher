@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from audio_switcher.domain.models import AudioDevice, SwitchTarget, TargetKind
+from audio_switcher.services.device_matching import resolve_devices
 
 
 class SwitchError(RuntimeError):
@@ -46,12 +47,7 @@ class OutputSwitcher:
         self._default_policy = default_policy
 
     def switch(self, target: SwitchTarget) -> SwitchResult:
-        active_by_id = {device.id.casefold(): device for device in self._endpoints.list_active()}
-        candidates = [
-            active_by_id[configured.id.casefold()]
-            for configured in target.devices
-            if configured.id.casefold() in active_by_id
-        ]
+        candidates = resolve_devices(target.devices, self._endpoints.list_active())
         if not candidates:
             raise SwitchError("登録された出力デバイスが接続されていません。")
 

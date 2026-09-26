@@ -98,3 +98,14 @@ def test_no_registered_device_is_active() -> None:
 
     with pytest.raises(SwitchError, match="接続されていません"):
         switcher.switch(app_target())
+
+
+def test_changed_endpoint_ids_are_automatically_rebound_by_name() -> None:
+    active = [AudioDevice("new-a", "A"), AudioDevice("new-b", "B")]
+    app_policy = FakeApplicationPolicy(current_id="new-a")
+    switcher = OutputSwitcher(FakeEndpoints(active), app_policy, FakeDefaultPolicy())
+
+    result = switcher.switch(app_target())
+
+    assert result.device.id == "new-b"
+    assert app_policy.changed_to == "new-b"

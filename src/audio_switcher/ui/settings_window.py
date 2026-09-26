@@ -16,6 +16,7 @@ from audio_switcher.domain.models import (
 from audio_switcher.platform.windows.audio_sessions import RunningAudioApplication
 from audio_switcher.platform.windows.global_hotkeys import HotkeyError, parse_hotkey
 from audio_switcher.platform.windows.processes import executable_display_name
+from audio_switcher.services.device_matching import resolve_device, resolve_devices
 
 
 class RefreshComboBox(QtWidgets.QComboBox):
@@ -184,10 +185,12 @@ class TargetDialog(QtWidgets.QDialog):
             self._name.setText(executable_display_name(path))
 
     def _append_device(self, device: AudioDevice) -> None:
-        active_ids = {item.id.casefold() for item in self._active_devices}
-        suffix = "" if device.id.casefold() in active_ids else "（未接続）"
-        item = QtWidgets.QListWidgetItem(f"{device.name}{suffix}")
-        item.setData(QtCore.Qt.ItemDataRole.UserRole, device.to_dict())
+        resolved = resolve_device(device, self._active_devices)
+        displayed = resolved or device
+        suffix = "" if resolved is not None else "（未接続）"
+        item = QtWidgets.QListWidgetItem(f"{displayed.name}{suffix}")
+        # Saving the dialog migrates a stale endpoint ID to the currently active one.
+        item.setData(QtCore.Qt.ItemDataRole.UserRole, displayed.to_dict())
         self._devices.addItem(item)
 
     def _configured_devices(self) -> list[AudioDevice]:
@@ -198,7 +201,10 @@ class TargetDialog(QtWidgets.QDialog):
         return devices
 
     def _add_device(self) -> None:
-        configured_ids = {device.id.casefold() for device in self._configured_devices()}
+        configured_ids = {
+            device.id.casefold()
+            for device in resolve_devices(self._configured_devices(), self._active_devices)
+        }
         choices = [
             device for device in self._active_devices if device.id.casefold() not in configured_ids
         ]
